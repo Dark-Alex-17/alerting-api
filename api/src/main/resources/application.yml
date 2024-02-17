@@ -1,0 +1,22 @@
+server:
+  servlet:
+    contextPath: "/poc/alerting/v1"
+  port: 8080
+spring:
+  jackson:
+    time-zone: UTC
+    default-property-inclusion: non_null
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+  datasource:
+    url: "jdbc:h2:tcp://localhost:9091/mem:alerting"
+    username: "defaultUser"
+    password: "secret"
+  application:
+    name: AlertingApi
+  main:
+    allow-bean-definition-overriding: true
+  profiles:
+    active: "api"

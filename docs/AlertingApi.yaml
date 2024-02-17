@@ -1,0 +1,938 @@
+openapi: 3.0.1
+info:
+  title: Alerting API
+  description: 'This is a POC API for a dynamic, reactive alerting system.'
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080/poc/alerting/v1
+tags:
+  - name: Alerts
+  - name: Recipients
+security:
+  - alerting_auth:
+      - read
+      - write
+paths:
+  /accounts/{account_id}/alerts:
+    get:
+      tags:
+        - Alerts
+      description: Get the list of alerts for an account
+      summary: Get the list of alerts for an account
+      operationId: getListOfAlerts
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account to get alerts from.
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: include_recipients
+          in: query
+          description: >
+            If set to true, then the list of all recipients belonging to each alert will be included in the response.
+          schema:
+            type: boolean
+            default: false
+            example: true
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+                example:
+                  - id: "percentageOfDeliveryFailures"
+                    name: "Percentage of Delivery Failures"
+                    threshold: "90"
+                    type: "PERCENTAGE_OF_DELIVERY_FAILURES"
+                    frequency: "15m"
+                    enabled: true
+                    last_triggered: "2021-04-22T16:33:21.959Z"
+                    notification_sent: "2021-04-22T16:33:21.959Z"
+                    is_triggered: true,
+                    reference_time_period: "1 Week"
+                    created: "2021-04-22T16:33:21.959Z"
+                    updated: "2021-04-22T16:33:21.959Z"
+                    updated_by: "someOtherUser"
+                    recipients:
+                      - id: "someUsersEmail"
+                        recipient: "someUser@somedomain.com"
+                        type: "EMAIL"
+                        created: "2021-02-22T16:09:28.139Z"
+                        updated: "2021-04-26T04:01:13.448Z"
+                        updated_by: "someUser"
+                      - id: "someOtherUsersEmail"
+                        recipient: "someOtherUser@somedomain.com"
+                        type: "EMAIL"
+                        created: "2021-03-04T07:17:33.244Z"
+                        updated: "2021-03-04T08:00:54.562Z"
+                        updated_by: "someOtherUser"
+                  - id: "failureThresholdAlert"
+                    name: "Too Many Errors"
+                    threshold: "1820"
+                    type: "FAILURE_THRESHOLD_ALERT"
+                    frequency: "5m"
+                    enabled: false
+                    last_triggered: "2021-04-22T16:33:21.959Z"
+                    notification_sent: "2021-04-22T16:33:21.959Z"
+                    is_triggered: true
+                    reference_time_period: "1 Month"
+                    created: "2021-04-22T16:33:21.959Z"
+                    updated: "2021-04-26T04:01:13.448Z"
+                    updated_by: "someOtherUser"
+                    recipients:
+                      - id: "someUserHttpRecipient"
+                        recipient: "https://some.test.callback.com/callback"
+                        type: "HTTP"
+                        username: "mikeRoweSoft"
+                        password: "iSuPpOrTwInDoWs"
+                        created: "2021-05-19T02:39:12.922Z"
+                        updated: "2021-05-19T02:39:12.922Z"
+                        updated_by: "someUser"
+        403:
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - alerting_auth:
+            - write:alert
+            - read:alert
+
+    post:
+      tags:
+        - Alerts
+      description: Add an alert to the specified account.
+      summary: Add an alert to the specified account
+      operationId: addAlert
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of an account to add an alert to.
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                id:
+                  type: string
+                  description: >
+                    External ID used by users to refer to alert.
+                    If an ID is specified, the ID must be account-unique.
+                    If not provided, it will be automatically generated.
+                name:
+                  type: string
+                  description: The name of this alert
+                  default: "Default value differs by the alert type"
+                threshold:
+                  type: string
+                  description: A threshold must be given for a custom alert.
+                  default: "Default value differs by the alert type"
+                type:
+                  type: string
+                  description: The type of alert being added to the account
+                  enum:
+                    - PERCENTAGE_OF_DELIVERY_FAILURES
+                    - FAILURE_THRESHOLD_ALERT
+                    - HARD_CODED_ALERT_1
+                    - HARD_CODED_ALERT_2
+                frequency:
+                  type: string
+                  description: The frequency of how often the alerting condition is checked.
+                  default: "15m"
+                enabled:
+                  type: boolean
+                  description: Boolean value denoting whether the alert is enabled or not.
+                  default: true
+                reference_time_period:
+                  type: string
+                  description: Time period to run the alerting condition against (lags in time series data).
+                  default: "1 Month"
+              example:
+                id: "testAlert1"
+                name: "Too Many Messages Are Being Sent"
+                threshold: "666"
+                type: "FAILURE_THRESHOLD_ALERT"
+                frequency: "5m"
+                enabled: false
+                reference_time_period: "1 Week"
+              required:
+                - type
+      responses:
+        201:
+          description: Successfully created new alert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+              example:
+                id: "testAlert1"
+                name: "Too Many Messages Are Being Sent"
+                threshold: "666"
+                type: "FAILURE_THRESHOLD_ALERT"
+                frequency: "15m"
+                enabled: false
+                reference_time_period: "1 Week"
+                created: "2021-04-22T16:33:21.959Z"
+                updated: "2021-04-22T16:33:21.959Z"
+                updated_by: "someUser"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          description: An alert with the specified ID already exists on the given account
+        422:
+          description: >
+            * Invalid alert request
+
+            * The type was unspecified, or does not exist
+      security:
+        - alerting_auth:
+            - write:alert
+            - read:alert
+
+  /accounts/{account_id}/alerts/{alert_id}:
+    get:
+      tags:
+        - Alerts
+      description: Get an alert given an alert ID and account ID.
+      summary: Get an alert given an alert ID and account ID
+      operationId: getAlertById
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account to get alerts from.
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: External ID used by users to refer to an alert.
+          required: true
+          schema:
+            type: string
+            example: "someHardcodedAlert"
+        - name: include_recipients
+          in: query
+          description: >
+            If set to true, then the list of all recipients belonging to the alert will be included in the response.
+          schema:
+            type: boolean
+            default: false
+            example: true
+      responses:
+        200:
+          description: Found alert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+              example:
+                id: "someHardcodedAlert"
+                name: "Percentage of Delivery Failures"
+                threshold: "90"
+                type: "PERCENTAGE_OF_DELIVERY_FAILURES"
+                frequency: "15m"
+                enabled: true
+                last_triggered: "2021-04-22T16:33:21.959Z"
+                notification_sent: "2021-04-22T16:33:21.959Z"
+                is_triggered: true
+                reference_time_period: "1 Week"
+                created: "2021-04-22T16:33:21.959Z"
+                updated: "2021-04-22T16:33:21.959Z"
+                updated_by: "someOtherUser"
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFoundAlert'
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+    patch:
+      tags:
+        - Alerts
+      description: >
+        Update the attributes of an existing alert. Note that if a user attempts to update the type of an alert, the value will be ignored.
+      summary: Update the attributes of an existing alert
+      operationId: updateAlert
+      parameters:
+        - name: account_id
+          in: path
+          description: >
+            ID of the account that the alert belongs to. This cannot be updated and will be ignored if placed in the payload
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: External ID used by users to refer to an alert. This cannot be updated and will be ignored if placed in the payload
+          required: true
+          schema:
+            type: string
+            example: "testAlert1"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  description: A new name for the specified alert
+                threshold:
+                  type: string
+                  description: A new threshold for the alert
+                frequency:
+                  type: string
+                  description: The frequency of how often the alerting condition is checked
+                enabled:
+                  type: boolean
+                  description: Boolean value denoting whether the alert is enabled or not
+                reference_time_period:
+                  type: string
+                  description: Time period to run the alerting condition against (lags in time series data)
+              example:
+                name: "Too Many Messages Are Being Sent"
+                threshold: "955"
+                frequency: "15m"
+                enabled: true
+                reference_time_period: "1 Month"
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+              example:
+                id: "testAlert1"
+                name: "Too Many Messages Are Being Sent"
+                threshold: "955"
+                type: "FAILURE_THRESHOLD_ALERT"
+                frequency: "15m"
+                enabled: true
+                last_triggered: "2021-04-22T16:33:21.959Z"
+                notification_sent: "2021-04-22T16:33:21.959Z"
+                is_triggered: false
+                reference_time_period: "1 Month"
+                created: "2021-04-22T16:33:21.959Z"
+                updated: "2021-05-19T12:45:09.127Z"
+                updated_by: "someUser"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFoundAlert'
+        422:
+          description: >
+            * Invalid update request
+
+            * User was attempting to update alert type
+
+            * User attempted to update name value to an empty value
+
+            * User attempted to update threshold value to empty value
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+    delete:
+      tags:
+        - Alerts
+      description: >
+        Remove the specified alert from the account. When an alert is deleted, all recipients belonging to the alert are also removed.
+      summary: Remove the specified alert from the account
+      operationId: deleteAlert
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account that the alert exists on.
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: External ID used by users to refer to an alert.
+          required: true
+          schema:
+            type: string
+            example: "testAlert1"
+      responses:
+        204:
+          description: Successfully deleted alert
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFoundAlert'
+      security:
+        - alerting_auth:
+            - write:alert
+            - read:alert
+
+  /accounts/{account_id}/recipients:
+    get:
+      tags:
+        - Recipients
+      description: Get the list of all recipients on the specified account
+      summary: Get the list of all recipients on the specified account
+      operationId: getAllRecipients
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account to get recipients from
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+      responses:
+        200:
+          description: Successfully returned the list of recipients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipient'
+                example:
+                  - id: "someUsersEmail"
+                    recipient: "someUser@somedomain.com"
+                    type: "EMAIL"
+                    created: "2021-02-22T16:09:28.139Z"
+                    updated: "2021-04-26T04:01:13.448Z"
+                    updated_by: "someUser"
+                  - id: "someOtherUsersEmail"
+                    recipient: "someOtherUser@somedomain.com"
+                    type: "EMAIL"
+                    created: "2021-03-04T07:17:33.244Z"
+                    updated: "2021-03-04T08:00:54.562Z"
+                    updated_by: "someOtherUser"
+                  - id: "someUserHttpRecipient"
+                    recipient: "https://some.test.callback.com/callback"
+                    type: "HTTP"
+                    username: "mikeRoweSoft"
+                    password: "iSuPpOrTwInDoWs"
+                    created: "2021-05-19T02:39:12.922Z"
+                    updated: "2021-05-19T02:39:12.922Z"
+                    updated_by: "someUser"
+        403:
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+  /accounts/{account_id}/alerts/{alert_id}/recipients:
+    get:
+      tags:
+        - Recipients
+      description: Get the list of recipients for an alert
+      summary: Get the list of recipients for an alert
+      operationId: getRecipientList
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account to get recipients from
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: The alert that the recipients belong to
+          required: true
+          schema:
+            type: string
+            example: "percentageOfDeliveryFailures"
+      responses:
+        200:
+          description: Successfully returned list of recipients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipient'
+                example:
+                  - id: "someUsersEmail"
+                    recipient: "someUser@somedomain.com"
+                    type: "EMAIL"
+                    created: "2021-02-22T16:09:28.139Z"
+                    updated: "2021-04-26T04:01:13.448Z"
+                    updated_by: "someUser"
+                  - id: "someOtherUsersEmail"
+                    recipient: "someOtherUser@somedomain.com"
+                    type: "EMAIL"
+                    created: "2021-03-04T07:17:33.244Z"
+                    updated: "2021-03-04T08:00:54.562Z"
+                    updated_by: "someOtherUser"
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFoundAlert'
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+    post:
+      tags:
+        - Recipients
+      description: Add one or more recipients to an alert. Note that no more than 25 recipients can be added to an alert.
+      summary: Add one or more recipients to an alert
+      operationId: addRecipient
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account that the recipient exists on.
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: The alert that the recipient(s) will belong to
+          required: true
+          schema:
+            type: string
+            example: "percentageOfDeliveryFailures"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: >
+                      External ID used by users to refer to a recipient.
+                      This must be unique among all recipient IDs given for the specified account. If this field is not provided, an ID is generated.
+                  recipient:
+                    type: string
+                    description: >
+                      Identifier that indicates who is receiving the notification.
+
+                      * When the type is SMS, the recipient value must conform to the E.164 format recommendation
+
+                      * When the type is EMAIL, the recipient value must conform to RFC-5322
+
+                      * When the type is HTTP, as of RFC 3986, URIs should no longer support credentials.
+                      As a result, all URIs must conform to “http[s]://host[:port]/path?querystring” format.
+                  type:
+                    type: string
+                    enum:
+                      - EMAIL
+                      - SMS
+                      - HTTP
+                    description: The type of the recipient.
+                  username:
+                    type: string
+                    description: >
+                      Username for recipient HTTP webhook authentication. Only applicable to HTTP recipient types.
+                  password:
+                    type: string
+                    description: >
+                      Password for recipient HTTP webhook authentication. Only applicable to HTTP recipient types.
+                required:
+                  - recipient
+                  - type
+              example:
+                - id: "someUserHttpRecipient"
+                  recipient: "https://some.test.callback.com/callback"
+                  type: "HTTP"
+                  username: "mikeRoweSoft"
+                  password: "iSuPpOrTwInDoWs"
+                - id: "someUsersEmail"
+                  recipient: "someUser@somedomain.com"
+                  type: "EMAIL"
+      responses:
+        201:
+          description: Successfully created new recipient(s)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipient'
+              example:
+                - id: "someUserHttpRecipient"
+                  recipient: "https://some.test.callback.com/callback"
+                  type: "HTTP"
+                  username: "mikeRoweSoft"
+                  password: "iSuPpOrTwInDoWs"
+                  created: "2021-05-19T02:39:12.922Z"
+                  updated: "2021-05-19T02:39:12.922Z"
+                  updated_by: "someUser"
+                - id: "someUsersEmail"
+                  recipient: "someUser@somedomain.com"
+                  type: "EMAIL"
+                  created: "2021-02-22T16:09:28.139Z"
+                  updated: "2021-02-22T16:09:28.139Z"
+                  updated_by: "someUser"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFoundAlert'
+        409:
+          description: A recipient with the specified ID already exists on the given account
+        422:
+          description: >
+            * Invalid recipient request
+
+            * User provided an unsupported type for one or more of the recipients
+
+            * User attempted to add more than 25 recipients to the alert
+
+            * Alert already has the maximum number of recipients
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+  /accounts/{account_id}/alerts/{alert_id}/recipients/{recipient_id}:
+    get:
+      tags:
+        - Recipients
+      description: Get a recipient given the account ID, alert ID, and recipient ID.
+      summary: Get a recipient given the account ID, alert ID, and recipient ID
+      operationId: getRecipient
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account to get recipients from
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: The alert that the recipient belongs to
+          required: true
+          schema:
+            type: string
+            example: "someHardCodedAlert"
+        - name: recipient_id
+          in: path
+          description: External ID used by users to refer to a recipient
+          required: true
+          schema:
+            type: string
+            example: "someUsersEmail"
+      responses:
+        200:
+          description: Found Recipient
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipient'
+              example:
+                id: "someUsersEmail"
+                recipient: "someUser@somedomain.com"
+                type: "EMAIL"
+                created: "2021-02-22T16:09:28.139Z"
+                updated: "2021-04-26T04:01:13.448Z"
+                updated_by: "someUser"
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          description: >
+            * Recipient ID is unknown
+
+            * Alert ID is unknown
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+    patch:
+      tags:
+        - Recipients
+      description: Update the attributes of a recipient.
+      summary: Update the attributes of a recipient
+      operationId: updateRecipient
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account that the recipient exists on.
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: The alert that the recipient belongs to
+          required: true
+          schema:
+            type: string
+            example: "someHardCodedAlert"
+        - name: recipient_id
+          in: path
+          description: External ID used by users to refer to a recipient
+          required: true
+          schema:
+            type: string
+            example: "someUserHttpRecipient"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipient:
+                  type: string
+                  description: >
+                    Identifier that indicates who is receiving the notification.
+
+                    * When the type is SMS, the recipient value must conform to the E.164 format recommendation
+
+                    * When the type is EMAIL, the recipient value must conform to RFC-5322
+
+                    * When the type is HTTP, as of RFC 3986, URIs should no longer support credentials.
+                    As a result, all URIs must conform to “http[s]://host[:port]/path?querystring” format.
+                type:
+                  type: string
+                  enum:
+                    - EMAIL
+                    - SMS
+                    - HTTP
+                  description: The type of the recipient
+                username:
+                  type: string
+                  description: >
+                    Username for recipient HTTP webhook authentication. Only applicable to HTTP recipient types.
+                password:
+                  type: string
+                  description: >
+                    Password for recipient HTTP webhook authentication. Only applicable to HTTP recipient types.
+              example:
+                password: "AppleHQLooksLikeAHalo.Suspicious!"
+      responses:
+        200:
+          description: Successfully updated recipient
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipient'
+              example:
+                id: "someUserHttpRecipient"
+                recipient: "https://some.test.callback.com/callback"
+                type: "HTTP"
+                username: "mikeRoweSoft"
+                password: "AppleHQLooksLikeAHalo.Suspicious!"
+                created: "2021-05-19T02:39:12.922Z"
+                updated: "2021-05-19T03:13:59.164Z"
+                updated_by: "someUser"
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          description: >
+            * Recipient ID is unknown
+
+            * Alert ID is unknown
+        422:
+          description: >
+            * Invalid update recipient request
+
+            * Invalid type provided
+
+            * Invalid or unsupported recipient URI given
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+    delete:
+      tags:
+        - Recipients
+      description: Delete a recipient.
+      summary: Delete a recipient
+      operationId: deleteRecipient
+      parameters:
+        - name: account_id
+          in: path
+          description: ID of the account that the recipient exists on
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1234567
+        - name: alert_id
+          in: path
+          description: The alert that the recipient(s) belong to
+          required: true
+          schema:
+            type: string
+            example: "someHardCodedAlert"
+        - name: recipient_id
+          in: path
+          description: >
+            External ID used by users to refer to a recipient.
+            Multiple recipients can be deleted by specify a comma-separated list of recipient ID's.
+          required: true
+          schema:
+            type: string
+            example: "someUserHttpRecipient,someUsersEmail"
+      responses:
+        204:
+          description: Successfully removed recipient(s)
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          description: >
+            * One or more recipient IDs are unknown
+
+            * Alert ID is unknown
+      security:
+        - alerting_auth:
+            - write:alerts
+            - read:alerts
+
+components:
+  responses:
+    Forbidden:
+      description: >
+        * Unknown Account
+
+        * User is not allowed to represent the given account
+
+    BadRequest:
+      description: Request is invalid
+
+    NotFoundAlert:
+      description: Alert ID is unknown
+
+  schemas:
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Hardcoded or account-unique identifier for the alert
+        name:
+          type: string
+          description: The name of this alert
+        threshold:
+          type: string
+          description: The threshold value associated with this alert
+        type:
+          type: string
+          description: The type of alert. The type will be an enum value matching one of the hard coded alerts.
+          enum:
+            - PERCENTAGE_OF_DELIVERY_FAILURES
+            - FAILURE_THRESHOLD_ALERT
+            - HARD_CODED_ALERT_1
+            - HARD_CODED_ALERT_2
+        frequency:
+          type: string
+          description: The frequency of how often the alerting condition is checked
+        enabled:
+          type: boolean
+          description: Boolean value denoting whether the alert is enabled or not
+        last_triggered:
+          type: string
+          description: >
+            Timestamp of when the alert was last triggered, conforming to RFC 3339 format. The time zone is always UTC
+        notification_sent:
+          type: string
+          description: >
+            Timestamp of when the last notification was sent, conforming to RFC 3339 format. The time zone is always UTC
+        is_triggered:
+          type: boolean
+          description: Boolean value denoting whether the alert is still currently being triggered
+        reference_time_period:
+          type: string
+          description: Time period to run the alerting condition against (lags in time series data)
+        created:
+          type: string
+          description: >
+            Timestamp of when the alert was created, conforming to RFC 3339 format.
+            The time zone is always UTC. For the create operation, the updated time will be the same as the created time.
+        updated:
+          type: string
+          description: >
+            Timestamp of when the alert was last updated, conforming to RFC 3339 format. The time zone is always UTC
+        updated_by:
+          type: string
+          description: The last user to update the alert
+        recipients:
+          type: array
+          description: >
+            The list of full recipient objects is only returned when the include_recipients parameter is set to true
+          items:
+            $ref: '#/components/schemas/Recipient'
+
+    Recipient:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Account-unique identifier for the recipient
+        recipient:
+          type: string
+          description: Identifier that indicates who is receiving the notification
+        type:
+          type: string
+          enum:
+            - EMAIL
+            - SMS
+            - HTTP
+          description: Type of recipient.
+        username:
+          type: string
+          description: >
+            Username for recipient HTTP webhook authentication. Only applicable to HTTP recipient types.
+        password:
+          type: string
+          description: >
+            Password for recipient HTTP webhook authentication. Only applicable to HTTP recipient types.
+        created:
+          type: string
+          description: >
+            Timestamp of when the recipient was created, conforming to RFC 3339 format. The time zone is always UTC.
+        updated:
+          type: string
+          description: >
+            Timestamp of when the recipient was last updated, conforming to RFC 3339 format. The time zone is always UTC.
+            For the create operation, the updated time will be the same as the created time.
+        updated_by:
+          type: string
+          description: The last user to update the recipient.
+
+  securitySchemes:
+    alerting_auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.alexjclarke.com/oauth/authorize
+          tokenUrl: https://login.alexjclarke.com/oauth/token
+          scopes:
+            read:alerts: read your alerts
+            write:alerts: modify alerts in your account

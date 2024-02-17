@@ -1,0 +1,19 @@
+server:
+  port: 0
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+spring:
+  profiles:
+    active: "batch"
+  datasource:
+    url: "jdbc:h2:tcp://localhost:9091/mem:alerting;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;"
+    username: "defaultUser"
+    password: "secret"
+  application:
+    name: BatchWorker
+  jackson:
+    time-zone: UTC
+  main:
+    allow-bean-definition-overriding: true
