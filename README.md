@@ -49,7 +49,7 @@ batch worker.
 
 The API is available at http://localhost:8080/poc/alerting/v1/
 
-The OpenAPI spec is available [here](docs/AlertingApi.yaml).
+API documentation is available [here](https://dark-alex-17.github.io/alerting-poc/z)
 
 `./gradlew api:bootRun`
 
