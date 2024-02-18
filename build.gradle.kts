@@ -19,7 +19,7 @@ repositories {
 }
 
 allprojects {
-    group = "com.poc.alerting"
+    group = "com.alexjclarke.alerting"
     version = "0.0.1-SNAPSHOT"
 
     tasks.withType<JavaCompile> {
@@ -71,5 +71,5 @@ subprojects {
 }
 
 springBoot {
-    mainClass.set("com.poc.alerting.persistence.Persistence")
+    mainClass.set("com.alexjclarke.alerting.persistence.Persistence")
 }

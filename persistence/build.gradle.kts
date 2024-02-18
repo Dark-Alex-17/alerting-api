@@ -23,5 +23,5 @@ flyway {
 
 tasks.getByName<BootJar>("bootJar") {
     enabled = true
-    mainClass.set("com.poc.alerting.persistence.Persistence")
+    mainClass.set("com.alexjclarke.alerting.persistence.Persistence")
 }

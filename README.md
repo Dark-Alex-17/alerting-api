@@ -1,6 +1,6 @@
-# Dynanmic, Reactive Alerting API (Proof-of-Concept)
+# Simple Alerting API
 
-This project is a proof-of-concept API for a dynamic, reactive alerting system.
+This project is a simple API for a dynamic, reactive alerting system (minus the notification component).
 It consists of four different modules that comprise the overall functionality of the project.
 
 * amqp
@@ -8,18 +8,16 @@ It consists of four different modules that comprise the overall functionality of
 * batch
 * persistence
 
-*Note that the notification component is not part of this proof-of-concept*
-
 ## Architecture
 ![alerting architecture](./alerting-architecture.png)
 
 ## Getting Started
 
-1. Clone the project. `git clone git@github.com:Dark-Alex-17/alerting-poc.git`
-2. Open the `alerting-poc` folder with IntelliJ. Use auto-import for a Gradle
+1. Clone the project. `git clone git@github.com:Dark-Alex-17/alerting-api.git`
+2. Open the `alerting-api` folder with IntelliJ. Use auto-import for a Gradle
    project.
    
-## Running the POC
+## Running the API
 ### Start the persistence tier
 The persistence tier will start up the in-memory H2 database. Once started,
 Flyway will populate the database with the alerting schema and test data, and also
@@ -29,8 +27,6 @@ Once H2 is up and running, a TCP server is started on port 9091 so other applica
 can use the database.
 
 The H2 browser console is available at http://localhost:8081/h2-console
-
-#### Start the Persistence Layer
 
 `./gradlew persistence:bootRun`
 
@@ -47,9 +43,9 @@ The API is how users provision alerts and recipients, and all data is persisted 
 Additionally, all operations send a message to RabbitMQ to provision and schedule Quartz jobs in the 
 batch worker.
 
-The API is available at http://localhost:8080/poc/alerting/v1/
+The API is available at http://localhost:8080/api/alerting/v1/
 
-API documentation is available [here](https://dark-alex-17.github.io/alerting-poc/)
+API documentation is available [here](https://dark-alex-17.github.io/alerting-api/)
 
 `./gradlew api:bootRun`
 

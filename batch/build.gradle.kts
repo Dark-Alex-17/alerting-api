@@ -21,9 +21,9 @@ dependencies {
 
 tasks.getByName<BootJar>("bootJar") {
 	enabled = true
-	mainClass.set("com.poc.alerting.batch.BatchWorkerKt")
+	mainClass.set("com.alexjclarke.alerting.batch.BatchWorkerKt")
 }
 
 springBoot {
-	mainClass.set("com.poc.alerting.batch.BatchWorkerKt")
+	mainClass.set("com.alexjclarke.alerting.batch.BatchWorkerKt")
 }

@@ -1,6 +1,6 @@
 server:
   servlet:
-    contextPath: "/poc/alerting/v1"
+    contextPath: "/api/alerting/v1"
   port: 8080
 spring:
   jackson:

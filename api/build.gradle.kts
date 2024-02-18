@@ -23,5 +23,5 @@ dependencies {
 
 tasks.getByName<BootJar>("bootJar") {
     enabled = true
-    mainClass.set("com.poc.alerting.api.AlertingApi")
+    mainClass.set("com.alexjclarke.alerting.api.AlertingApi")
 }
