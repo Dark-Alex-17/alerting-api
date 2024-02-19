@@ -8,9 +8,6 @@ It consists of four different modules that comprise the overall functionality of
 * batch
 * persistence
 
-## Architecture
-![alerting architecture](./alerting-architecture.png)
-
 ## Getting Started
 
 1. Clone the project. `git clone git@github.com:Dark-Alex-17/alerting-api.git`
